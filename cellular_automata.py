@@ -34,7 +34,7 @@ BUILDINGS = {
 
 # Initialize grid
 def init_grid():
-    grid = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]  # Fill grid with zeros
+    initial_grid = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]  # Fill grid with zeros
 
     max_houses = 5
     max_trees = 5
@@ -46,15 +46,15 @@ def init_grid():
     end = start + center_size - 1
 
     # Generowanie domów w środkowym obszarze 4x4
-    for j in range(max_houses):
+    for _ in range(max_houses):
         house_x = random.randint(start, end)
         house_y = random.randint(start, end)
-        grid[house_x][house_y] = 1
-    for j in range(max_trees):
-        grid[random.randint(0, GRID_SIZE - 1)][random.randint(0, GRID_SIZE - 1)] = 2
+        initial_grid[house_x][house_y] = 1
+    for _ in range(max_trees):
+        initial_grid[random.randint(0, GRID_SIZE - 1)][random.randint(0, GRID_SIZE - 1)] = 2
 
-    print(grid)
-    return grid
+    print(initial_grid)
+    return initial_grid
 
 
 # Neighbourhood function
@@ -63,22 +63,22 @@ def init_grid():
 """
 
 
-def count_neighbours(grid, x, y):
-    house_count = 0
-    tree_count = 0
+def count_neighbours(grid_, x_pos, y_pos):
+    house_counter = 0
+    tree_counter = 0
     directions = [(-1, -1), (-1, 0), (-1, 1),
                   (0, -1), (0, 1),
                   (1, -1), (1, 0), (1, 1)]
 
     for dx, dy in directions:
-        nx, ny = x + dx, y + dy
+        nx, ny = x_pos + dx, y_pos + dy
         if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:
-            if grid[nx][ny] == 1:
-                house_count += 1
-            elif grid[nx][ny] == 2:
-                tree_count += 1
+            if grid_[nx][ny] == 1:
+                house_counter += 1
+            elif grid_[nx][ny] == 2:
+                tree_counter += 1
 
-    return house_count, tree_count
+    return house_counter, tree_counter
 
 
 def duplicate(obj, collection, data=True, actions=True):
@@ -93,10 +93,14 @@ def duplicate(obj, collection, data=True, actions=True):
 
 def rem():
     for obj in bpy.data.objects:
-        if 'house' in obj.name and 'house' != obj.name:
+        if ('house' in obj.name or 'tree' in obj.name) and obj.name != 'house' and obj.name != 'tree':
+            bpy.context.collection.objects.unlink(obj)
             bpy.data.objects.remove(obj)
-        elif 'tree' in obj.name and 'tree' != obj.name:
-            bpy.data.objects.remove(obj)
+
+        # if 'house' in obj.name and 'house' != obj.name and obj.name != 'house':
+        #     bpy.data.objects.remove(obj)
+        # if 'tree' in obj.name and 'tree' != obj.name and obj.name != 'tree':
+        #     bpy.data.objects.remove(obj)
 
 
 rem()
@@ -109,22 +113,6 @@ tree.hide_set(True)
 
 house.animation_data_clear()
 tree.animation_data_clear()
-
-# for i in range(1):
-#     bpy.context.scene.frame_set(0)
-#     obj_copy = duplicate(house, bpy.context.collection)
-#     obj_copy.name = "house" + str(i)
-#     obj_copy.location = (0, 0, 2)
-#     obj_copy.hide_viewport = True
-#     obj_copy.keyframe_insert(data_path="location", index=-1)
-#     obj_copy.keyframe_insert(data_path="hide_viewport")
-
-#     bpy.context.scene.frame_set(60)
-#     obj_copy.location = (i, 0, 2)
-#     obj_copy.hide_viewport = False
-#     obj_copy.keyframe_insert(data_path="location", index=-1)
-#     obj_copy.keyframe_insert(data_path="hide_viewport")
-
 
 # WRITE A PROGRAM
 
@@ -154,26 +142,6 @@ for x in range(GRID_SIZE):
             obj_copy.hide_viewport = False
             obj_copy.keyframe_insert(data_path="hide_viewport")
 
-# Print count_neighbours for each cell
-for x in range(GRID_SIZE):
-    for y in range(GRID_SIZE):
-        print(count_neighbours(grid, x, y), end=' ')
-    print()
-print("DOWN")
-# # Make animation. Move houses and trees to new positions (randomly: +/- 1 in x and y)
-# for i in range(1, STEPS):
-#    bpy.context.scene.frame_set(i * FRAME_INTERVAL)
-#    for x in range(GRID_SIZE):
-#        for y in range(GRID_SIZE):
-#            if grid[x][y] == 1:
-#                obj_copy = bpy.data.objects[f"house_{x}_{y}"]
-#                obj_copy.location = (x + random.randint(-1, 1), y + random.randint(-1, 1), 1)
-#                obj_copy.keyframe_insert(data_path="location", index=-1)
-#            elif grid[x][y] == 2:
-#                obj_copy = bpy.data.objects[f"tree_{x}_{y}"]
-#                obj_copy.location = (x + random.randint(-1, 1), y + random.randint(-1, 1), 1)
-#                obj_copy.keyframe_insert(data_path="location", index=-1)
-
 for i in range(0, STEPS):
     neighbours = [[(0, 0) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
     for x in range(GRID_SIZE):
@@ -188,7 +156,7 @@ for i in range(0, STEPS):
             # count_neighbours ---> @return: tuple (house_count, tree_count)
             # if house_count = 3. Generate a house
             house_count = neighbours[x][y][0]
-            
+
             if (house_count == 3 or house_count == 2) and grid[x][y] == 0:
                 obj_copy = duplicate(house, bpy.context.collection)
                 obj_copy.name = f"house_{x}_{y}"
@@ -225,9 +193,7 @@ for i in range(0, STEPS):
                     bpy.context.collection.objects.unlink(obj_to_remove)
                     bpy.data.objects.remove(obj_to_remove)
 
-
                     # Aktualizuj siatkę
                     grid[x][y] = 0
-
 
 print("XD")
