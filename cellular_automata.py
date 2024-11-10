@@ -1,7 +1,6 @@
 import bpy
 import random
 
-
 """
 Proszę napisać program generujący miasto z wykorzystaniem automatu komórkowego. 
 W tym celu należy napisać Pythonie skrypt tworzący animację w programie Blender. 
@@ -19,10 +18,10 @@ Tworzymy po jednym prototypie każdego rodzaju obiektu (np. budynku) i ukrywamy 
 W toku animacji tworzymy kopie obiektów i przesuwamy je na odpowiednie miejsce, a następnie ustawiamy widoczność na True
 """
 
-GRID_SIZE = 10
+GRID_SIZE = 15
 CELL_SIZE = 2
-STEPS = 5
-FRAME_INTERVAL = 30
+STEPS = 8
+FRAME_INTERVAL = 0
 
 BUILDINGS = {
     0: 'none',
@@ -176,29 +175,59 @@ print("DOWN")
 #                obj_copy.keyframe_insert(data_path="location", index=-1)
 
 for i in range(0, STEPS):
-    bpy.context.scene.frame_set(i * FRAME_INTERVAL)
+    neighbours = [[(0, 0) for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
     for x in range(GRID_SIZE):
         for y in range(GRID_SIZE):
-            neighbours = count_neighbours(grid, x, y)
+            neighbours[x][y] = count_neighbours(grid, x, y)
 
-            # Add randomly two new houses and one tree to empty cells
-            if grid[x][y] == 0:
-                # draw to random empty cells
-                if random.random() < 0.1:
-                    obj_copy = duplicate(house, bpy.context.collection)
-                    obj_copy.name = f"house_{x}_{y}"
-                    # Initial position (outside the grid)
-                    obj_copy.location = (1, 1, 1)
-                    obj_copy.hide_viewport = True
-                    obj_copy.keyframe_insert(data_path="location", index=-1)
-                    obj_copy.keyframe_insert(data_path="hide_viewport")
+    bpy.context.scene.frame_set(i * FRAME_INTERVAL)
 
-                    # Set final attributes
-                    bpy.context.scene.frame_set(bpy.context.scene.frame_current + 60)
-                    obj_copy.location = (x, y, 1)
-                    obj_copy.hide_viewport = False
-                    obj_copy.keyframe_insert(data_path="location", index=-1)
-                    obj_copy.keyframe_insert(data_path="hide_viewport")
-                    grid[x][y] = 1
+    print(neighbours)
+    for x in range(GRID_SIZE):
+        for y in range(GRID_SIZE):
+            # count_neighbours ---> @return: tuple (house_count, tree_count)
+            # if house_count = 3. Generate a house
+            house_count = neighbours[x][y][0]
+            
+            if (house_count == 3 or house_count == 2) and grid[x][y] == 0:
+                obj_copy = duplicate(house, bpy.context.collection)
+                obj_copy.name = f"house_{x}_{y}"
+
+                # Initial position (outside the grid)
+                obj_copy.location = (1, 1, 1)
+                obj_copy.hide_viewport = True
+                obj_copy.keyframe_insert(data_path="location", index=-1)
+                obj_copy.keyframe_insert(data_path="hide_viewport")
+
+                # Set final attributes
+                bpy.context.scene.frame_set(bpy.context.scene.frame_current + 60)
+                obj_copy.location = (x, y, 1)
+                obj_copy.hide_viewport = False
+                obj_copy.keyframe_insert(data_path="location", index=-1)
+                obj_copy.keyframe_insert(data_path="hide_viewport")
+
+                # Update grid (house is built)
+                grid[x][y] = 1
+
+            elif (house_count >= 4 or house_count == 1) and grid[x][y] == 1:
+
+                # Znajdź obiekt po nazwie (zakładając, że został wcześniej dodany)
+                house_name = f"house_{x}_{y}"
+
+                if house_name in bpy.context.collection.objects:
+                    obj_to_remove = bpy.context.collection.objects[house_name]
+
+                    # Ukryj obiekt w widoku
+                    obj_to_remove.hide_viewport = True
+                    obj_to_remove.keyframe_insert(data_path="hide_viewport")
+
+                    # Usuń obiekt z kolekcji
+                    bpy.context.collection.objects.unlink(obj_to_remove)
+                    bpy.data.objects.remove(obj_to_remove)
+
+
+                    # Aktualizuj siatkę
+                    grid[x][y] = 0
+
 
 print("XD")
