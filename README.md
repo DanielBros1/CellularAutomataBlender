@@ -32,12 +32,12 @@ Project is a visual simulation of city growth based on simple, cellular automata
 
 ## Images: 
 
-<img src="https://github.com/user-attachments/assets/3abd01ab-59d3-49ce-ad6d-6bcb7fe54ec7" width="400">
-
-
-<img src="https://github.com/user-attachments/assets/6f84e15a-3183-4377-a729-e3aa9b1ab300" width="400">
 
 <img src ="https://github.com/user-attachments/assets/8c1d207a-0c93-4d6b-a816-6866f439e40b" width="400">
+
+<img src="https://github.com/user-attachments/assets/3abd01ab-59d3-49ce-ad6d-6bcb7fe54ec7" width="427">
+
+<img src="https://github.com/user-attachments/assets/6f84e15a-3183-4377-a729-e3aa9b1ab300" height="400">
 
 ##### Author:
 ## @Daniel Broś
