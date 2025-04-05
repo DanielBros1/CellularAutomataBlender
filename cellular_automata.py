@@ -18,10 +18,10 @@ Tworzymy po jednym prototypie każdego rodzaju obiektu (np. budynku) i ukrywamy 
 W toku animacji tworzymy kopie obiektów i przesuwamy je na odpowiednie miejsce, a następnie ustawiamy widoczność na True
 """
 
-GRID_SIZE = 25
+GRID_SIZE = 20
 CELL_SIZE = 2
-STEPS = 15
-FRAME_INTERVAL = 100
+STEPS = 25
+FRAME_INTERVAL = 15
 
 BUILDINGS = {
     0: 'none',
@@ -159,52 +159,40 @@ water.animation_data_clear()
 # Generate a grid and generate house only on cells with value 1
 # Generate a grid and generate tree only on cells with value 2
 
-HOUSE_SIZE = (0.35, 0.5, 1)
-TREE_SIZE = (0.6, 0.7, 0.6)
+HOUSE_SIZE = (0.30, 0.42, 0.6)
+TREE_SIZE = (0.5, 0.6, 0.5)
 WATER_SIZE = (0.5, 0.5, 0.1)
+
+HOUSE_Z_LOCATION = 0.6
+TREE_Z_LOCATION = 1.93
+WATER_Z_LOCATION = 0.1
+
 grid = init_grid()
 bpy.context.scene.frame_set(0)
+
+
+def create_and_animate_object(obj, name, location, scale, frame_start, frame_end):
+    obj_copy = duplicate(obj, bpy.context.collection)
+    obj_copy.name = name
+    obj_copy.location = location
+
+    # Początkowe skalowanie na 0 (niewidoczne)
+    obj_copy.scale = (0, 0, 0)
+    obj_copy.keyframe_insert(data_path="scale", frame=frame_start)
+
+    # Końcowe skalowanie na 1 (widoczne)
+    obj_copy.scale = scale
+    obj_copy.keyframe_insert(data_path="scale", frame=frame_end)
+
+
 for x in range(GRID_SIZE):
     for y in range(GRID_SIZE):
         if grid[x][y] == 1:
-
-            obj_copy = duplicate(house, bpy.context.collection)
-            obj_copy.name = f"house_{x}_{y}"
-            obj_copy.location = (x, y, 1)
-
-            # Początkowe skalowanie na 0 (niewidoczne)
-            obj_copy.scale = (0, 0, 0)
-            obj_copy.keyframe_insert(data_path="scale", frame=0)
-
-            # Końcowe skalowanie na 1 (widoczne)
-            obj_copy.scale = (0.35, 0.5, 1)
-            obj_copy.keyframe_insert(data_path="scale", frame=FRAME_INTERVAL)
-
+            create_and_animate_object(house, f"house_{x}_{y}", (x, y, HOUSE_Z_LOCATION), HOUSE_SIZE, 0, FRAME_INTERVAL)
         elif grid[x][y] == 2:
-            obj_copy = duplicate(tree, bpy.context.collection)
-            obj_copy.name = f"tree_{x}_{y}"
-            obj_copy.location = (x, y, 2.29)
-
-            # Początkowe skalowanie na 0 (niewidoczne)
-            obj_copy.scale = (0, 0, 0)
-            obj_copy.keyframe_insert(data_path="scale", frame=0)
-
-            # Końcowe skalowanie na 1 (widoczne)
-            obj_copy.scale = (0.6, 0.7, 0.6)
-            obj_copy.keyframe_insert(data_path="scale", frame=FRAME_INTERVAL)
-
+            create_and_animate_object(tree, f"tree_{x}_{y}", (x, y, TREE_Z_LOCATION), TREE_SIZE, 0, FRAME_INTERVAL)
         elif grid[x][y] == 4:
-            obj_copy = duplicate(water, bpy.context.collection)
-            obj_copy.name = f"water_{x}_{y}"
-            obj_copy.location = (x, y, 0.1)
-
-            # Początkowe skalowanie na 0 (niewidoczne)
-            obj_copy.scale = (0, 0, 0)
-            obj_copy.keyframe_insert(data_path="scale", frame=0)
-
-            # Końcowe skalowanie na 1 (widoczne)
-            obj_copy.scale = (0.5, 0.5, 0.1)
-            obj_copy.keyframe_insert(data_path="scale", frame=FRAME_INTERVAL)
+            create_and_animate_object(water, f"water_{x}_{y}", (x, y, WATER_Z_LOCATION), WATER_SIZE, 0, FRAME_INTERVAL)
 
 for i in range(1, STEPS + 1):
     frame = i * FRAME_INTERVAL
@@ -227,28 +215,19 @@ for i in range(1, STEPS + 1):
                 print(f'Building house at {x}, {y} at frame {frame}')
                 grid[x][y] = 1
 
-                obj_copy = duplicate(house, bpy.context.collection)
-                obj_copy.name = f"house_{x}_{y}"
-                obj_copy.location = (x, y, 1)
-
-                # Początkowe skalowanie na 0 (niewidoczne)
-                obj_copy.scale = (0, 0, 0)
-                obj_copy.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 4)
-
-                # Końcowe skalowanie na 1 (widoczne)
-                obj_copy.scale = (0.35, 0.5, 1)
-                obj_copy.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL)
+                create_and_animate_object(house, f"house_{x}_{y}", (x, y, HOUSE_Z_LOCATION),
+                                          HOUSE_SIZE, frame + FRAME_INTERVAL / 4, frame + FRAME_INTERVAL)
 
             elif (house_count >= 4 or house_count == 1) and grid[x][y] == 1:
                 house_name = f"house_{x}_{y}"
+                grid[x][y] = 5
 
                 if house_name in bpy.context.collection.objects:
-                    grid[x][y] = 5
 
                     obj_to_remove = bpy.context.collection.objects[house_name]
 
                     # Zmniejsz skalę, zamiast usuwać obiekt
-                    obj_to_remove.scale = (0.35, 0.5, 1)
+                    obj_to_remove.scale = HOUSE_SIZE
                     obj_to_remove.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 4)
 
                     obj_to_remove.scale = (0, 0, 0)
@@ -264,17 +243,8 @@ for i in range(1, STEPS + 1):
                         print(f'Generating tree at {x}, {y} at frame {frame}')
                         grid[x][y] = 2
 
-                        obj_copy = duplicate(tree, bpy.context.collection)
-                        obj_copy.name = f"tree_{x}_{y}"
-                        obj_copy.location = (x, y, 2.29)
-
-                        # Początkowe skalowanie na 0 (niewidoczne)
-                        obj_copy.scale = (0, 0, 0)
-                        obj_copy.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 4)
-
-                        # Końcowe skalowanie na 1 (widoczne)
-                        obj_copy.scale = (0.6, 0.7, 0.6)
-                        obj_copy.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL)
+                        create_and_animate_object(tree, f"tree_{x}_{y}", (x, y, TREE_Z_LOCATION),
+                                                  TREE_SIZE, frame + FRAME_INTERVAL / 4, frame + FRAME_INTERVAL)
 
                         # WYKASUJ CZTERY DOMY WOKÓŁ (x[+1], y), (x[-1], y), (x, y[+1]), (x, y[-1])
                         grid_to_remove = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
@@ -285,18 +255,14 @@ for i in range(1, STEPS + 1):
                                     obj_to_remove = bpy.context.collection.objects[house_name]
 
                                     # Zmniejsz skalę, zamiast usuwać obiekt
-                                    obj_to_remove.scale = (0.35, 0.5, 1)
+                                    obj_to_remove.scale = HOUSE_SIZE
                                     obj_to_remove.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 4)
 
                                     obj_to_remove.scale = (0, 0, 0)
                                     obj_to_remove.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 2)
 
-                                    # Usuń obiekt z kolekcji
-                                    # bpy.context.collection.objects.unlink(obj_to_remove)
-                                    # bpy.data.objects.remove(obj_to_remove)
-
                                     print(f'Removing house at {x_}, {y_} at frame {frame}')
 
-                                    grid[x_][y_] = 0
+                                    grid[x_][y_] = 5
 
 print("XD")
