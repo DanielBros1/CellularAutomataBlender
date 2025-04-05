@@ -1,23 +1,7 @@
 import bpy
 import random
 
-"""
-Proszę napisać program generujący miasto z wykorzystaniem automatu komórkowego. 
-W tym celu należy napisać Pythonie skrypt tworzący animację w programie Blender. 
-Animacja powinna przedstawiać ewolucję miasta.
-Proponowane założenia programu:
-- używamy dwuwymiarowego automatu komórkowego, aby wygenerować rozmieszczenie obiektów,
-- komórka może mieć kilka różnych stanów w zależności od tego, jaki obiekt ma zostać na niej zbudowany 
-(i czy ma zostać zbudowany),
-- na dwuwymiarowej siatce ustawiamy obiekty 3D,
-- sąsiedztwo może mieć promień większy niż 1 w zależności od potrzeb.
-Możliwe są modyfikacje tych założeń po uzgodnieniu ze mną.
-
-Animację proponuję zrobić w następujący sposób:
-Tworzymy po jednym prototypie każdego rodzaju obiektu (np. budynku) i ukrywamy go. 
-W toku animacji tworzymy kopie obiektów i przesuwamy je na odpowiednie miejsce, a następnie ustawiamy widoczność na True
-"""
-
+# SIMULATION PARAMETERS
 GRID_SIZE = 20
 CELL_SIZE = 2
 STEPS = 25
@@ -63,12 +47,10 @@ def generate_river(grid):
             grid[current_x + offset][current_y] = 4
 
 
-# Initialize grid
 def init_grid():
     initial_grid = [[0 for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]  # Fill grid with zeros
 
     max_houses = 5
-    max_trees = 0
     center_size = 4  # Rozmiar środkowego obszaru (4x4)
 
     generate_river(initial_grid)
@@ -76,29 +58,18 @@ def init_grid():
     # Oblicz granice środkowego obszaru
     start = (GRID_SIZE - center_size) // 2
     end = start + center_size - 1
-    print(start, end)
 
     # Generowanie domów w środkowym obszarze 4x4
     for _ in range(max_houses):
         house_x = random.randint(start, end)
         house_y = random.randint(start, end)
         initial_grid[house_x][house_y] = 1
-    #    for _ in range(max_trees):
-    #        initial_grid[random.randint(0, GRID_SIZE - 1)][random.randint(0, GRID_SIZE - 1)] = 2
 
-    print(initial_grid)
     return initial_grid
-
-
-# Neighbourhood function
-"""
-@:return: tuple (house_count, tree_count)
-"""
 
 
 def count_neighbours(grid_, x_pos, y_pos):
     house_counter = 0
-    tree_counter = 0
     directions = [(-1, -1), (-1, 0), (-1, 1),
                   (0, -1), (0, 1),
                   (1, -1), (1, 0), (1, 1)]
@@ -108,8 +79,6 @@ def count_neighbours(grid_, x_pos, y_pos):
         if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:
             if grid_[nx][ny] == 1:
                 house_counter += 1
-            elif grid_[nx][ny] == 2:
-                tree_counter += 1
 
     return house_counter
 
@@ -131,45 +100,6 @@ def rem():
             bpy.context.collection.objects.unlink(obj)
             bpy.data.objects.remove(obj)
 
-        # if 'house' in obj.name and 'house' != obj.name and obj.name != 'house':
-        #     bpy.data.objects.remove(obj)
-        # if 'tree' in obj.name and 'tree' != obj.name and obj.name != 'tree':
-        #     bpy.data.objects.remove(obj)
-        # if 'water' in obj.name and 'water' != obj.name and obj.name != 'water':
-        #     bpy.data.objects.remove(obj)
-
-
-rem()
-
-house = bpy.data.objects['house']
-house.hide_set(True)
-
-tree = bpy.data.objects['tree']
-tree.hide_set(True)
-
-water = bpy.data.objects['water']
-water.hide_set(True)
-
-house.animation_data_clear()
-tree.animation_data_clear()
-water.animation_data_clear()
-
-# WRITE A PROGRAM
-
-# Generate a grid and generate house only on cells with value 1
-# Generate a grid and generate tree only on cells with value 2
-
-HOUSE_SIZE = (0.30, 0.42, 0.6)
-TREE_SIZE = (0.5, 0.6, 0.5)
-WATER_SIZE = (0.5, 0.5, 0.1)
-
-HOUSE_Z_LOCATION = 0.6
-TREE_Z_LOCATION = 1.93
-WATER_Z_LOCATION = 0.1
-
-grid = init_grid()
-bpy.context.scene.frame_set(0)
-
 
 def create_and_animate_object(obj, name, location, scale, frame_start, frame_end):
     obj_copy = duplicate(obj, bpy.context.collection)
@@ -183,6 +113,33 @@ def create_and_animate_object(obj, name, location, scale, frame_start, frame_end
     # Końcowe skalowanie na 1 (widoczne)
     obj_copy.scale = scale
     obj_copy.keyframe_insert(data_path="scale", frame=frame_end)
+
+
+
+rem()
+
+house = bpy.data.objects['house']
+house.hide_set(True)
+tree = bpy.data.objects['tree']
+tree.hide_set(True)
+water = bpy.data.objects['water']
+water.hide_set(True)
+
+house.animation_data_clear()
+tree.animation_data_clear()
+water.animation_data_clear()
+
+HOUSE_SIZE = (0.30, 0.42, 0.6)
+TREE_SIZE = (0.5, 0.6, 0.5)
+WATER_SIZE = (0.5, 0.5, 0.1)
+
+HOUSE_Z_LOCATION = 0.6
+TREE_Z_LOCATION = 1.93
+WATER_Z_LOCATION = 0.1
+
+grid = init_grid()
+bpy.context.scene.frame_set(0)
+
 
 
 for x in range(GRID_SIZE):
@@ -202,17 +159,14 @@ for i in range(1, STEPS + 1):
             neighbours[x][y] = count_neighbours(grid, x, y)
             print(neighbours[x][y])
 
-    # bpy.context.scene.frame_set(i)
-
-    # print(neighbours)
     for x in range(GRID_SIZE):
         for y in range(GRID_SIZE):
             # count_neighbours ---> @return: tuple (house_count, tree_count)
-            # if house_count = 3. Generate a house
             house_count = neighbours[x][y]
 
             if (house_count == 2) and grid[x][y] == 0:
-                print(f'Building house at {x}, {y} at frame {frame}')
+                # Generate a house
+                # print(f'Building house at {x}, {y} at frame {frame}')
                 grid[x][y] = 1
 
                 create_and_animate_object(house, f"house_{x}_{y}", (x, y, HOUSE_Z_LOCATION),
@@ -233,10 +187,6 @@ for i in range(1, STEPS + 1):
                     obj_to_remove.scale = (0, 0, 0)
                     obj_to_remove.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 2)
 
-                    # Usuń obiekt z kolekcji
-                    # bpy.context.collection.objects.unlink(obj_to_remove)
-                    # bpy.data.objects.remove(obj_to_remove)
-
                     print(f'Removing house at {x}, {y} at frame {frame}')
 
                     if random.random() < 0.15:
@@ -254,15 +204,11 @@ for i in range(1, STEPS + 1):
                                 if house_name in bpy.context.collection.objects:
                                     obj_to_remove = bpy.context.collection.objects[house_name]
 
-                                    # Zmniejsz skalę, zamiast usuwać obiekt
+                                    # Zmniejsz skalę do 0, zamiast usuwać obiekt
                                     obj_to_remove.scale = HOUSE_SIZE
                                     obj_to_remove.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 4)
 
                                     obj_to_remove.scale = (0, 0, 0)
                                     obj_to_remove.keyframe_insert(data_path="scale", frame=frame + FRAME_INTERVAL / 2)
 
-                                    print(f'Removing house at {x_}, {y_} at frame {frame}')
-
                                     grid[x_][y_] = 5
-
-print("XD")
